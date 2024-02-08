@@ -1,5 +1,5 @@
 <!-- chat.html -->
-<!DOCTYPE html>
+<!--<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -19,7 +19,7 @@
             <div class="user-list">
                 <h2>Users Online:</h2>
                 <ul id="user-list">
-                    <!-- Display the list of users here -->
+                     
                 </ul>
             </div>
         </div>
@@ -29,7 +29,7 @@
 
             <div class="chat-container">
                 <div class="chat__item__container" id="chat-item-container">
-                    <!-- Display messages here -->
+                     
                 </div>
             </div>
 
@@ -89,4 +89,107 @@
         };
     </script>
 </body>
+</html>-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
+    <style>
+        /* CSS styling remains the same */
+        /* Add your CSS styles here */
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="left-column">
+            {% if request.user.is_authenticated %}
+                <!-- Change the logout link to a form that submits a POST request -->
+                <form method="post" action="{% url 'logout-user' %}">
+                    {% csrf_token %}
+                    <button type="submit">Logout</button>
+                </form>
+            {% endif %}
+            <div class="user-list">
+                <h2>Users Online:</h2>
+                <ul id="user-list">
+                    <!-- Display the list of users here -->
+                </ul>
+            </div>
+        </div>
+
+        <div class="main-column">
+            <h1>Hello, Welcome to kml chat app {{ request.user }}</h1>
+
+            <div class="chat-container">
+                <div class="chat__item__container" id="chat-item-container">
+                    <!-- Display messages here -->
+                </div>
+            </div>
+
+            <div class="bottom-row">
+                <input type="text" id="message-input" placeholder="Type your message..." />
+                <button id="send-button">Send Message</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript code to interact with WebSocket server
+        const chatSocket = new WebSocket("ws://" + window.location.host + "/");
+        
+        // Function to handle incoming messages
+        function handleIncomingMessage(data) {
+            const chatItemContainer = document.getElementById("chat-item-container");
+            const messageDiv = document.createElement("div");
+            messageDiv.textContent = data.username + ": " + data.message;
+            chatItemContainer.appendChild(messageDiv);
+            // Automatically scroll to the bottom of the chat container
+            chatItemContainer.scrollTop = chatItemContainer.scrollHeight;
+        }
+
+        chatSocket.onopen = function (e) {
+            console.log("WebSocket connection established.");
+        };
+
+        chatSocket.onclose = function (e) {
+            console.error("WebSocket connection closed unexpectedly. Reconnecting...");
+            // Reconnect to WebSocket server
+            setTimeout(function() {
+                location.reload(); // Reload the page to reconnect to the WebSocket server
+            }, 1000); // Retry after 1 second
+        };
+
+        document.getElementById("message-input").focus();
+
+        document.getElementById("message-input").onkeyup = function (e) {
+            if (e.keyCode === 13) {  // Enter key
+                document.getElementById("send-button").click();
+            }
+        };
+
+        document.getElementById("send-button").onclick = function () {
+            const messageInputDom = document.getElementById("message-input");
+            const message = messageInputDom.value;
+            messageInputDom.value = "";
+
+            if (message.trim() === "") {
+                return;  // Prevent sending empty messages
+            }
+
+            chatSocket.send(JSON.stringify({
+                "message": message,
+                "username": "{{ request.user.username }}"
+            }));
+        };
+
+        chatSocket.onmessage = function (e) {
+            const data = JSON.parse(e.data);
+            handleIncomingMessage(data);
+        };
+    </script>
+</body>
 </html>
+
+
